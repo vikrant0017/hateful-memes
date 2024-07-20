@@ -1,0 +1,20 @@
+model_config:
+  visual_roberta:
+    roberta_model_name: roberta-base
+    training_head_type: classification
+    visual_embedding_dim: 2048
+    special_visual_initialize: true
+    embedding_strategy: plain
+    bypass_transformer: false
+    output_attentions: false
+    max_position_embeddings: 514
+    output_hidden_states: false
+    random_initialize: false
+    freeze_base: false
+    finetune_lr_multiplier: 1
+    type_vocab_size: 1
+    # Default points to BERT pooler strategy which is to take
+    # representation of CLS token after passing it through a dense layer
+    pooler_strategy: default
+    vocab_size: 50265
+    zerobias: false     # Initialize l

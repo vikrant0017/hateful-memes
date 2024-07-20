@@ -80,7 +80,7 @@ class HMConverter:
         )
 
         parser.add_argument(
-            "--password", required=True, type=str, help="Password for the zip file"
+            "--password", required=None, type=str, help="Password for the zip file"
         )
         parser.add_argument(
             "--move", required=None, type=int, help="Move data dir to mmf cache dir"

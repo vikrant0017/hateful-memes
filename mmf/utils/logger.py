@@ -10,6 +10,7 @@ import sys
 import time
 from functools import wraps
 from typing import Any, Callable, Dict, Optional, Union
+from omegaconf import OmegaConf
 
 import torch
 from mmf.common.registry import registry
@@ -426,7 +427,7 @@ class WandbLogger:
             )
 
         self._wandb = wandb
-        self._wandb_init = dict(entity=entity, config=config, project=project)
+        self._wandb_init = dict(entity=entity, config=OmegaConf.to_container(config, resolve=True), project=project)
         wandb_kwargs = dict(config.training.wandb)
         wandb_kwargs.pop("enabled")
         wandb_kwargs.pop("entity")
