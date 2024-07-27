@@ -1120,3 +1120,60 @@ class RefinerContrastiveLoss(nn.Module):
             loss = sum(loss) / batch_size
 
         return loss
+
+
+@registry.register_loss("confidence_penalty")
+class ConfidencePenaltyLoss(nn.Module):
+    def __init__(self, penalty_factor=.1, **params):
+        super().__init__()
+        self.penalty_factor = penalty_factor
+
+    def forward(self, sample_list, model_output):
+        inputs = model_output['scores']
+        targets = sample_list['targets']
+        log_probs = F.log_softmax(inputs, dim=-1)
+        probs = torch.exp(log_probs)
+        entropy = -torch.sum(probs * log_probs, dim=-1)
+        loss = F.cross_entropy(inputs, targets)
+        penalty = self.penalty_factor * torch.mean(entropy)
+        return loss + penalty 
+
+
+@registry.register_loss("focal_loss")
+class FocalLoss(torch.nn.Module):
+    def __init__(self, alpha=1, gamma=2, reduction='mean'):
+        """
+        :param alpha: Weighting factor for the class (useful for unbalanced classes).
+        :param gamma: Focusing parameter. Higher values increase focus on hard-to-classify examples.
+        :param reduction: Specifies the reduction to apply to the output. ('none', 'mean', 'sum')
+        """
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, sample_list, model_output):
+        """
+        :param inputs: Predicted logits from the model. Shape [batch_size, num_classes]
+        :param targets: Ground truth labels. Shape [batch_size]
+        """
+        inputs = model_output['scores']
+        targets = sample_list['targets']
+        # Convert logits to probabilities
+        probs = torch.softmax(inputs, dim=-1)
+        
+        # Get the probabilities corresponding to the true labels
+        target_probs = probs.gather(dim=-1, index=targets.unsqueeze(-1)).squeeze(-1)
+        
+        # Calculate the focal loss components
+        focal_weight = (1 - target_probs) ** self.gamma
+        ce_loss = F.cross_entropy(inputs, targets, reduction='none')
+        
+        loss = self.alpha * focal_weight * ce_loss
+        
+        if self.reduction == 'mean':
+            return loss.mean()
+        elif self.reduction == 'sum':
+            return loss.sum()
+        else:
+            return loss
